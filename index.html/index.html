@@ -2,65 +2,124 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RF Calculator</title>
 <link rel="manifest" href="manifest.json">
 
 <style>
-body { font-family: Arial; padding:20px; max-width:400px; }
-input,button { width:100%; padding:10px; margin:5px 0; }
-.history-item { background:#eee; padding:8px; margin-top:5px; display:flex; justify-content:space-between; }
-.del { color:red; cursor:pointer; }
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  margin:0;
+  background:#f9f9f9;
+}
+h2 {
+  text-align:center;
+}
+input, button {
+  width:100%;
+  padding:12px;
+  margin:5px 0;
+  font-size:18px;
+  box-sizing:border-box;
+}
+button {
+  cursor:pointer;
+  background:#007bff;
+  color:white;
+  border:none;
+  border-radius:5px;
+}
+button:hover {opacity:0.9;}
+.history-item {
+  background:#eee;
+  padding:8px;
+  margin-top:5px;
+  display:flex;
+  justify-content:space-between;
+  border-radius:5px;
+}
+.del {color:red; cursor:pointer;}
+.total-box {
+  margin-top:10px;
+  font-weight:bold;
+}
+.flex-row {display:flex; gap:5px;}
+.flex-row input, .flex-row button {flex:1;}
 </style>
 </head>
-
 <body>
+
 <h2>RF Calculator</h2>
 
-<input id="golai" placeholder="Golai (2 digit)">
-<input id="lomba" placeholder="Lomba">
+<div class="flex-row">
+  <input type="number" id="golai" placeholder="Golai" inputmode="numeric">
+  <input type="number" id="lomba" placeholder="Lomba" inputmode="numeric">
+  <button onclick="calculate()">=</button>
+</div>
 
-<button onclick="calculate()">Calculate</button>
 <h3>Result: <span id="result">0.00</span></h3>
 
 <hr>
+
+<h3>History</h3>
 <div id="history"></div>
+
 <button onclick="sumHistory()">Sum All</button>
-<div>Total: <span id="total">0.00</span></div>
+<div class="total-box">Total: <span id="total">0.00</span></div>
 
 <script>
 let historyList=[];
 
-golai.oninput=()=>{ if(golai.value.length>=2) lomba.focus(); }
+// Auto focus Lomba after Golai input
+document.getElementById("golai").addEventListener("input", function(){
+  if(this.value.length>=2) lomba.focus();
+});
 
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('service-worker.js');
-}
+// Calculate on Enter key on Lomba
+document.getElementById("lomba").addEventListener("keypress", function(e){
+  if(e.key==="Enter") calculate();
+});
 
 function calculate(){
-  let g=+golai.value,l=+lomba.value;
-  if(!g||!l) return;
-  let ans=((g*g*l)/2304).toFixed(2);
-  result.innerText=ans;
+  let g = parseFloat(document.getElementById("golai").value);
+  let l = parseFloat(document.getElementById("lomba").value);
+
+  if(isNaN(g)||isNaN(l)) return;
+
+  let ans = ((g*g*l)/2304).toFixed(2);
+
+  document.getElementById("result").innerText = ans;
+
   historyList.push({g,l,ans});
-  show();
-  golai.value=lomba.value="";
-  golai.focus();
+  showHistory();
+
+  document.getElementById("golai").value="";
+  document.getElementById("lomba").value="";
+  document.getElementById("golai").focus();
 }
 
-function show(){
+function showHistory(){
+  const history=document.getElementById("history");
   history.innerHTML="";
-  historyList.forEach((i,n)=>{
+  historyList.forEach((item,i)=>{
     history.innerHTML+=`
-    <div class="history-item">
-      <span>${n+1}. ${i.g}x${i.l} = ${i.ans}</span>
-      <span class="del" onclick="del(${n})">X</span>
-    </div>`;
+      <div class="history-item">
+        <span>${i+1}. ${item.g}x${item.l} = ${item.ans}</span>
+        <span class="del" onclick="deleteItem(${i})">X</span>
+      </div>`;
   });
 }
 
-function del(i){ historyList.splice(i,1); show(); sumHistory(); }
+function deleteItem(i){
+  historyList.splice(i,1);
+  showHistory();
+  sumHistory();
+}
+
 function sumHistory(){
-  total.innerText=historyList.reduce((s,i)=>s+ +i.ans,0).toFixed(2);
+  let total=historyList.reduce((s,i)=>s+parseFloat(i.ans),0);
+  document.getElementById("total").innerText = total.toFixed(2);
 }
 </script>
 </body>
